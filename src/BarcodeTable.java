@@ -1,3 +1,4 @@
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -7,6 +8,10 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Vector;
@@ -22,6 +27,9 @@ public class BarcodeTable extends JPanel {
     private String BC_Num = "";
     private String BC_Price = "";
     private String BC_Qty = "";
+
+    JRadioButton rdLarge;
+    JRadioButton rdSmall;
 
     PrinterWritterArgox bpw;
 
@@ -55,7 +63,7 @@ public class BarcodeTable extends JPanel {
 
                 row.add( rs.getObject(2) );
                 row.add( rs.getObject(5) );
-                row.add( rs.getObject(6) );
+                row.add( rs.getObject(7) );
 
                 data.add( row );
             }
@@ -109,19 +117,17 @@ public class BarcodeTable extends JPanel {
         final TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(model);
         table.setRowSorter(sorter);
 
-        //For the purposes of this example, better to have a single
-        //selection.
+        //single row selection.
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         JScrollPane pane = new JScrollPane(table);
         pane.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(pane);
 
-//        JPanel p1 = new JPanel();
-//        p1.setLayout(new BoxLayout(p1, BoxLayout.Y_AXIS));
-
         JLabel lblFilter= new JLabel("Filter:");
         final JTextField filterText = new JTextField("");
+        JLabel lblQtyPrint= new JLabel("Qty:");
+        final JTextField txtQtyPrint = new JTextField("1");
 
         lblFilter.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(lblFilter);
@@ -164,27 +170,35 @@ public class BarcodeTable extends JPanel {
                         final int viewRow = table.getSelectedRow();
                         if (viewRow < 0) {
                             //Selection got filtered away.
-                            lblBarcodePrint.setText("");
+                            lblBarcodePrint.setText("<Select a Barcode>");
                         } else {
                             int rowIndex = table.convertRowIndexToModel(viewRow);
                             final String barcodeNum = table.getModel().getValueAt(rowIndex, 0).toString();
-                            final String barcodePrice = table.getModel().getValueAt(rowIndex, 2).toString();
+//                            final String barcodePrice = table.getModel().getValueAt(rowIndex, 2).toString();
+                            Double barcodePrice = null;
+                            if (table.getModel().getValueAt(rowIndex, 2) instanceof Double) {
+                                barcodePrice = (Double) table.getModel().getValueAt(rowIndex, 2);
+                            }
+//                            System.out.println(String.format( "%.2f", barcodePrice ));
+
                             lblBarcodePrint.setText(barcodeNum);
-                            lblBarcodePricePrint.setText(barcodePrice);
+                            lblBarcodePricePrint.setText(String.format( "%.2f", barcodePrice ).toString());
                         }
                     }
                 });
-
 
 
         button.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
 
                 BC_Num = lblBarcodePrint.getText();
-                float iBC_Price = Float.parseFloat(lblBarcodePricePrint.getText());
-                BC_Price = String.format("%.0f", iBC_Price);
-//                BC_Price = lblBarcodePricePrint.getText();
-                BC_Qty = "1";
+//                float iBC_Price = Float.parseFloat(lblBarcodePricePrint.getText());
+//                BC_Price = String.format("%.2f", iBC_Price);
+                BC_Price = lblBarcodePricePrint.getText();
+                BC_Qty = txtQtyPrint.getText();
+
+//                System.out.println(BC_Price);
+//                System.out.println();
 
                 jbtnNewActionPerformed(evt);
             }
@@ -192,25 +206,43 @@ public class BarcodeTable extends JPanel {
 
         add(lblBarcode);
         add(lblBarcodePrint);
+
+        lblQtyPrint.setAlignmentX(Component.LEFT_ALIGNMENT);
+        add(lblQtyPrint);
+
+        txtQtyPrint.setAlignmentX(Component.LEFT_ALIGNMENT);
+        add(txtQtyPrint);
+
+        //Create the radio buttons.
+        rdLarge = new JRadioButton("Large");
+        rdSmall = new JRadioButton("Small");
+        rdLarge.setSelected(true);
+
+        //Group the radio buttons.
+        ButtonGroup group = new ButtonGroup();
+        group.add(rdLarge);
+        group.add(rdSmall);
+
+        rdLarge.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rdSmall.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        add(rdLarge);
+        add(rdSmall);
         add(button);
 
-//        add(p1);
     }
-
-
-
 
 
     public void jbtnNewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbtnNewActionPerformed
         // Add your handling code here:
         exec = Executors.newSingleThreadExecutor();
         String sComport = "/dev/ttyUSB0";
+
         try {
             printBarcode(sComport);
 
         } catch (Exception eD) {
-//                MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, "not possible to access barcode printer", eD);
-            JOptionPane.showMessageDialog(null, "not possible to access barcode printer");
+            JOptionPane.showMessageDialog(null, "Not possible to access barcode printer, usb port may be wrong");
         }
     }//GEN-LAST:event_jbtnNewActionPerformed
 
@@ -222,6 +254,9 @@ public class BarcodeTable extends JPanel {
         try {
 
             bpw = new PrinterWritterArgox(sComport);
+
+            if (rdSmall.isSelected()) {
+
 
 //            bpw.write("N");
 //            bpw.write(NEW_LINE);
@@ -243,20 +278,45 @@ public class BarcodeTable extends JPanel {
 //	    	bpw.write("B320,200,0,1,2,1,50,B,\""+ m_jBarcode.getText() + "\"");
 //	    	bpw.write(NEW_LINE);
 
-            bpw.write("LO280,10,260,2");
-	    	bpw.write(NEW_LINE);
-	    	bpw.write("LO280,300,260,2");
-	    	bpw.write(NEW_LINE);
-	    	bpw.write("A260,30,0,c,1,1,N,\"That Place on Main\"");
-	    	bpw.write(NEW_LINE);
-	    	bpw.write("A300,90,0,3,2,2,N,\"" + BC_Num + "\"");
-	    	bpw.write(NEW_LINE);
-	    	bpw.write("B300,160,0,1,2,1,90,B,\""+ BC_Price + "\"");
-	    	bpw.write(NEW_LINE);
-	    	bpw.write("P" + BC_Qty);
-	    	bpw.write(NEW_LINE);
+//                bpw.write("LO280,10,260,2");
+//                bpw.write(NEW_LINE);
+//                bpw.write("LO280,100,260,2");
+//                bpw.write(NEW_LINE);
+//                bpw.write("A260,20,0,c,1,1,N,\"That Place on Main\"");
+//                bpw.write(NEW_LINE);
+                bpw.write("JF");
+                bpw.write(NEW_LINE);
+                bpw.write("A300,28,0,1,2,2,N,\"" + "R " + BC_Price + "\"");
+                bpw.write(NEW_LINE);
+                bpw.write("B300,75,0,1,2,1,40,N,\"" + BC_Num + "\"");
+                bpw.write(NEW_LINE);
+                bpw.write("P" + BC_Qty);
+                bpw.write(NEW_LINE);
+
+            }
+
+            if (rdLarge.isSelected()) {
+
+                bpw.write("JF");
+                bpw.write(NEW_LINE);
+                bpw.write("LO280,10,260,2");
+                bpw.write(NEW_LINE);
+                bpw.write("LO280,300,260,2");
+                bpw.write(NEW_LINE);
+                bpw.write("A260,30,0,c,1,1,N,\"That Place on Main\"");
+                bpw.write(NEW_LINE);
+                bpw.write("A300,90,0,3,2,2,N,\"" + "R " + BC_Price + "\"");
+                bpw.write(NEW_LINE);
+                bpw.write("B300,160,0,1,2,1,90,B,\"" + BC_Num + "\"");
+                bpw.write(NEW_LINE);
+                bpw.write("P" + BC_Qty);
+                bpw.write(NEW_LINE);
+
+            }
 
             bpw.close();
+
+
 
         } catch (TicketPrinterException e) {
             // TODO Auto-generated catch block
@@ -310,10 +370,22 @@ public class BarcodeTable extends JPanel {
         BarcodeTable newContentPane = new BarcodeTable();
         frame.setContentPane(newContentPane);
 
+        //icon
+        try {
+            frame.setIconImage(ImageIO.read(new File("src/icon_barcode.png")));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         //Display the window.
-        frame.setPreferredSize(new Dimension(800,575));
+        frame.setPreferredSize(new Dimension(800,550));
+        frame.setResizable(false);
+//        frame.setLocation((Toolkit.getDefaultToolkit().getScreenSize().width - frame.getSize().width) / 2,
+//                        (Toolkit.getDefaultToolkit().getScreenSize().height - frame.getSize().height) / 2);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+
     }
 
     public static void main(String[] args) {
