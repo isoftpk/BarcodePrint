@@ -372,7 +372,7 @@ public class BarcodeTable extends JPanel {
 
         //icon
         try {
-            frame.setIconImage(ImageIO.read(new File("src/icon_barcode.png")));
+            frame.setIconImage(ImageIO.read( ClassLoader.getSystemResource( "src/icon_barcode.png" )));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -380,8 +380,6 @@ public class BarcodeTable extends JPanel {
         //Display the window.
         frame.setPreferredSize(new Dimension(800,550));
         frame.setResizable(false);
-//        frame.setLocation((Toolkit.getDefaultToolkit().getScreenSize().width - frame.getSize().width) / 2,
-//                        (Toolkit.getDefaultToolkit().getScreenSize().height - frame.getSize().height) / 2);
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
