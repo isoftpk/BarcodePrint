@@ -8,17 +8,14 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class BarcodeTable extends JPanel {
+public class BarcodePrint extends JPanel {
 
     private static final byte[] NEW_LINE = {0x0A}; // Print and carriage return
 
@@ -33,7 +30,7 @@ public class BarcodeTable extends JPanel {
 
     PrinterWritterArgox bpw;
 
-    public BarcodeTable() {
+    public BarcodePrint() {
         super();
 
         ///Query TPOM Database - Products Table
@@ -367,7 +364,7 @@ public class BarcodeTable extends JPanel {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         //Create and set up the content pane.
-        BarcodeTable newContentPane = new BarcodeTable();
+        BarcodePrint newContentPane = new BarcodePrint();
         frame.setContentPane(newContentPane);
 
         //icon
